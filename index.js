@@ -21,6 +21,7 @@ client.connect(err => {
   const categoriesCollection = client.db("blogDB").collection("categories");
   const articlesCollection = client.db("blogDB").collection("articles");
   const likesCollection = client.db("blogDB").collection("likes");
+  const commentsCollection = client.db("blogDB").collection("comments");
 
 
 
@@ -59,6 +60,24 @@ client.connect(err => {
     })
   })
 
+  app.get('/getArticlesJoinendLikes', (req, res) => {
+
+    articlesCollection.aggregate([
+      { "$addFields": { "_id": { "$toString": "$_id" }}},
+      { "$lookup": {
+        "from": "likes",
+        "localField": "_id",
+        "foreignField": "articleId",
+        "as": "likesField"
+      }}
+    ]).toArray((err,doc)=>{
+      console.log(doc)
+      res.send(doc)
+    });
+
+  })
+
+
   app.get('/likeStatus/:filteredObj', (req, res) => {
     // console.log(req.params.articleId)
     const filter=JSON.parse(req.params.filteredObj);
@@ -68,6 +87,27 @@ client.connect(err => {
       res.send(doc)
     })
   })
+
+  app.get('/getComments/:filteredObj', (req, res) => {
+    // console.log(req.params.articleId)
+    const filter=JSON.parse(req.params.filteredObj);
+    
+    commentsCollection.find(filter).toArray((err,doc)=>{
+      // console.log(doc[0])
+      res.send(doc)
+    })
+  })
+  app.get('/getTotalLikes/:filteredObj', (req, res) => {
+    // console.log(req.params.articleId)
+    const filter=JSON.parse(req.params.filteredObj);
+    
+    likesCollection.find(filter).toArray((err,doc)=>{
+      // console.log(doc[0])
+      res.send(doc)
+    })
+  })
+
+
 
 // -----------post----------- 
   
@@ -91,7 +131,14 @@ client.connect(err => {
       res.send(doc)
     })
   })
+  app.post('/addComment',(req,res)=>{
 
+    // console.log(req.body)
+  
+    commentsCollection.insertOne(req.body,(err,doc)=>{
+      res.send(doc)
+    })
+  })
 
 
   // ----------Delete Request--------------
